@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>天体系统模拟器 - 探索宇宙奥秘</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.0/echarts.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: linear-gradient(135deg, #0B1426 0%, #1E1B3A 100%);
+            color: #FFFFFF;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* 导航栏样式 */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: rgba(11, 20, 38, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 1000;
+        }
+
+        .logo {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: #FFD700;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+
+        .nav-links a {
+            color: #FFFFFF;
+            text-decoration: none;
+            font-weight: 400;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-links a:hover {
+            color: #00FFFF;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+
+        .nav-links a.active {
+            color: #FFD700;
+        }
+
+        /* 主容器布局 */
+        .main-container {
+            display: grid;
+            grid-template-columns: 300px 1fr 300px;
+            grid-template-rows: 60px 1fr 80px;
+            height: 100vh;
+            padding-top: 60px;
+        }
+
+        /* 左侧面板 */
+        .left-panel {
+            background: rgba(42, 42, 42, 0.8);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(0, 255, 255, 0.2);
+            padding: 20px;
+            overflow-y: auto;
+            grid-row: 2 / 3;
+        }
+
+        .panel-title {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 18px;
+            color: #FFD700;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* 天体创建区域 */
+        .celestial-body-creator {
+            margin-bottom: 30px;
+        }
+
+        .creator-section {
+            margin-bottom: 15px;
+        }
+
+        .creator-label {
+            display: block;
+            font-size: 14px;
+            color: #00FFFF;
+            margin-bottom: 5px;
+        }
+
+        .creator-input {
+            width: 100%;
+            padding: 8px 12px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            border-radius: 4px;
+            color: #FFFFFF;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+        }
+
+        .creator-input:focus {
+            outline: none;
+            border-color: #FFD700;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        }
+
+        .creator-select {
+            width: 100%;
+            padding: 8px 12px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            border-radius: 4px;
+            color: #FFFFFF;
+            font-size: 12px;
+        }
+
+        .creator-button {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            border: none;
+            border-radius: 6px;
+            color: #0B1426;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+        }
+
+        .creator-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.4);
+        }
+
+        /* 天体列表 */
+        .celestial-bodies-list {
+            margin-top: 20px;
+        }
+
+        .body-item {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .body-item:hover {
+            border-color: #FFD700;
+            background: rgba(255, 215, 0, 0.1);
+        }
+
+        .body-item.selected {
+            border-color: #FFD700;
+            background: rgba(255, 215, 0, 0.2);
+        }
+
+        .body-name {
+            font-weight: 500;
+            color: #FFD700;
+            font-size: 14px;
+        }
+
+        .body-type {
+            font-size: 12px;
+            color: #00FFFF;
+            opacity: 0.8;
+        }
+
+        /* 中央3D场景 */
+        .scene-container {
+            position: relative;
+            background: radial-gradient(circle at center, #0B1426 0%, #000000 100%);
+            grid-row: 2 / 3;
+        }
+
+        #simulator-canvas {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+
+        #simulator-canvas:active {
+            cursor: grabbing;
+        }
+
+        /* 3D场景控制提示 */
+        .scene-controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            font-size: 12px;
+            color: #FFFFFF;
+            opacity: 0.7;
+        }
+
+        .scene-controls h4 {
+            color: #00FFFF;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .scene-controls p {
+            margin-bottom: 5px;
+        }
+
+        /* 右侧面板 */
+        .right-panel {
+            background: rgba(42, 42, 42, 0.8);
+            backdrop-filter: blur(10px);
+            border-left: 1px solid rgba(0, 255, 255, 0.2);
+            padding: 20px;
+            overflow-y: auto;
+            grid-row: 2 / 3;
+        }
+
+        /* 模拟控制 */
+        .simulation-controls {
+            margin-bottom: 30px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-label {
+            display: block;
+            font-size: 14px;
+            color: #00FFFF;
+            margin-bottom: 8px;
+        }
+
+        .control-slider {
+            width: 100%;
+            height: 6px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .control-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #FFD700;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        .control-button {
+            padding: 8px 16px;
+            background: rgba(0, 255, 255, 0.2);
+            border: 1px solid #00FFFF;
+            border-radius: 4px;
+            color: #FFFFFF;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .control-button:hover {
+            background: rgba(0, 255, 255, 0.3);
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+        }
+
+        .control-button.active {
+            background: #00FFFF;
+            color: #0B1426;
+        }
+
+        /* 实时数据 */
+        .real-time-data {
+            margin-top: 30px;
+        }
+
+        .data-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(0, 255, 255, 0.1);
+        }
+
+        .data-label {
+            font-size: 12px;
+            color: #00FFFF;
+        }
+
+        .data-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: #FFD700;
+        }
+
+        /* 底部状态栏 */
+        .status-bar {
+            background: rgba(11, 20, 38, 0.9);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(0, 255, 255, 0.2);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            grid-column: 1 / -1;
+            grid-row: 3 / 4;
+        }
+
+        .status-info {
+            display: flex;
+            gap: 30px;
+        }
+
+        .status-item {
+            font-size: 12px;
+            color: #FFFFFF;
+        }
+
+        .status-item span {
+            color: #FFD700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .performance-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .fps-counter {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: #00FFFF;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 1200px) {
+            .main-container {
+                grid-template-columns: 250px 1fr 250px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: 60px 1fr;
+            }
+            
+            .left-panel, .right-panel {
+                position: fixed;
+                top: 60px;
+                bottom: 0;
+                width: 280px;
+                z-index: 999;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+            
+            .right-panel {
+                right: 0;
+                left: auto;
+                transform: translateX(100%);
+            }
+            
+            .left-panel.open {
+                transform: translateX(0);
+            }
+            
+            .right-panel.open {
+                transform: translateX(0);
+            }
+            
+            .status-bar {
+                grid-column: 1;
+            }
+        }
+
+        /* 加载动画 */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #0B1426;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 3px solid rgba(0, 255, 255, 0.3);
+            border-top: 3px solid #00FFFF;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: #00FFFF;
+            font-size: 16px;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 加载动画 -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">正在初始化宇宙模拟器...</div>
+    </div>
+
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="logo">天体系统模拟器</div>
+        <div class="nav-links">
+            <a href="index.html" class="active">模拟器</a>
+            <a href="learn.html">学习中心</a>
+            <a href="scenarios.html">场景库</a>
+        </div>
+    </nav>
+
+    <!-- 主容器 -->
+    <div class="main-container">
+        <!-- 左侧面板 -->
+        <div class="left-panel">
+            <h3 class="panel-title">天体控制</h3>
+            
+            <!-- 天体创建 -->
+            <div class="celestial-body-creator">
+                <h4 style="color: #FFD700; font-size: 16px; margin-bottom: 15px;">创建天体</h4>
+                
+                <div class="creator-section">
+                    <label class="creator-label">天体类型</label>
+                    <select class="creator-select" id="body-type">
+                        <option value="star">恒星</option>
+                        <option value="planet">行星</option>
+                        <option value="moon">卫星</option>
+                        <option value="asteroid">小行星</option>
+                    </select>
+                </div>
+                
+                <div class="creator-section">
+                    <label class="creator-label">名称</label>
+                    <input type="text" class="creator-input" id="body-name" placeholder="输入天体名称">
+                </div>
+                
+                <div class="creator-section">
+                    <label class="creator-label">质量 (kg)</label>
+                    <input type="number" class="creator-input" id="body-mass" placeholder="1.0e24" value="5.97e24">
+                </div>
+                
+                <div class="creator-section">
+                    <label class="creator-label">半径 (km)</label>
+                    <input type="number" class="creator-input" id="body-radius" placeholder="6371" value="6371">
+                </div>
+                
+                <div class="creator-section">
+                    <label class="creator-label">初始速度 (km/s)</label>
+                    <input type="text" class="creator-input" id="body-velocity" placeholder="x,y,z" value="0,30,0">
+                </div>
+                
+                <div class="creator-section">
+                    <label class="creator-label">初始位置 (km)</label>
+                    <input type="text" class="creator-input" id="body-position" placeholder="x,y,z" value="150000000,0,0">
+                </div>
+                
+                <button class="creator-button" onclick="createCelestialBody()">创建天体</button>
+            </div>
+            
+            <!-- 天体列表 -->
+            <div class="celestial-bodies-list">
+                <h4 style="color: #FFD700; font-size: 16px; margin-bottom: 15px;">天体列表</h4>
+                <div id="bodies-list"></div>
+            </div>
+        </div>
+
+        <!-- 中央3D场景 -->
+        <div class="scene-container">
+            <canvas id="simulator-canvas"></canvas>
+            
+            <!-- 场景控制提示 -->
+            <div class="scene-controls">
+                <h4>3D控制</h4>
+                <p>🖱️ 左键拖拽：旋转视角</p>
+                <p>🖱️ 右键拖拽：平移视角</p>
+                <p>🖱️ 滚轮：缩放视图</p>
+                <p>⌨️ 空格：暂停/继续</p>
+                <p>⌨️ R：重置视角</p>
+            </div>
+        </div>
+
+        <!-- 右侧面板 -->
+        <div class="right-panel">
+            <h3 class="panel-title">模拟控制</h3>
+            
+            <!-- 模拟控制 -->
+            <div class="simulation-controls">
+                <div class="control-group">
+                    <label class="control-label">时间流速</label>
+                    <input type="range" class="control-slider" id="time-speed" min="0.1" max="100" value="1" step="0.1">
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; color: #888; margin-top: 5px;">
+                        <span>0.1x</span>
+                        <span id="current-speed">1.0x</span>
+                        <span>100x</span>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label class="control-label">模拟控制</label>
+                    <button class="control-button" id="play-pause-btn">暂停</button>
+                    <button class="control-button" onclick="resetSimulation()">重置</button>
+                    <button class="control-button" onclick="clearAllBodies()">清空</button>
+                </div>
+                
+                <div class="control-group">
+                    <label class="control-label">显示选项</label>
+                    <button class="control-button active" id="show-orbits">轨道</button>
+                    <button class="control-button active" id="show-labels">标签</button>
+                    <button class="control-button" id="show-gravity">引力场</button>
+                </div>
+                
+                <div class="control-group">
+                    <label class="control-label">预设场景</label>
+                    <button class="control-button" onclick="loadSolarSystem()">太阳系</button>
+                    <button class="control-button" onclick="loadBinarySystem()">双星系统</button>
+                    <button class="control-button" onclick="loadRandomSystem()">随机系统</button>
+                </div>
+            </div>
+            
+            <!-- 实时数据 -->
+            <div class="real-time-data">
+                <h4 style="color: #FFD700; font-size: 16px; margin-bottom: 15px;">实时数据</h4>
+                
+                <div class="data-item">
+                    <span class="data-label">模拟时间</span>
+                    <span class="data-value" id="sim-time">0.00 天</span>
+                </div>
+                
+                <div class="data-item">
+                    <span class="data-label">天体数量</span>
+                    <span class="data-value" id="body-count">0</span>
+                </div>
+                
+                <div class="data-item">
+                    <span class="data-label">系统总能量</span>
+                    <span class="data-value" id="total-energy">0.00 J</span>
+                </div>
+                
+                <div class="data-item">
+                    <span class="data-label">总动能</span>
+                    <span class="data-value" id="kinetic-energy">0.00 J</span>
+                </div>
+                
+                <div class="data-item">
+                    <span class="data-label">总势能</span>
+                    <span class="data-value" id="potential-energy">0.00 J</span>
+                </div>
+                
+                <div class="data-item">
+                    <span class="data-label">选中天体</span>
+                    <span class="data-value" id="selected-body">无</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部状态栏 -->
+        <div class="status-bar">
+            <div class="status-info">
+                <div class="status-item">
+                    状态: <span id="simulation-status">运行中</span>
+                </div>
+                <div class="status-item">
+                    引力常数: <span>G = 6.67×10⁻¹¹ N·m²/kg²</span>
+                </div>
+                <div class="status-item">
+                    积分方法: <span>Runge-Kutta 4</span>
+                </div>
+            </div>
+            
+            <div class="performance-indicator">
+                <span class="fps-counter">FPS: <span id="fps-counter">60</span></span>
+                <div style="width: 100px; height: 6px; background: rgba(0,0,0,0.5); border-radius: 3px; overflow: hidden;">
+                    <div id="performance-bar" style="height: 100%; background: linear-gradient(90deg, #00FFFF 0%, #FFD700 100%); width: 100%; transition: width 0.3s ease;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>
